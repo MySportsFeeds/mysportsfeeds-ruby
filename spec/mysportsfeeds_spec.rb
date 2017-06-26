@@ -19,7 +19,7 @@ describe "MySportsFeeds object" do
 
 	describe "#msf_get_data" do
 		it "gets all player game logs for Stephen Curry in the NBA 2016-2017 regular season in JSON format" do
-			@msf.authenticate("brad.barkhouse", "bradb2")
+			@msf.authenticate("YOUR_USERNAME", "YOUR_PASSWORD")
 			data = @msf.msf_get_data("nba", "2016-2017-regular", "player_gamelogs", "json",
 				"player" => "stephen-curry", "playerstats" => "FGA,FGM")
 		end
