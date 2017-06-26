@@ -1,5 +1,3 @@
-require "mysportsfeeds/version"
-
 require "mysportsfeeds/api/API_v1_0"
 
 ### Main class for all interaction with the MySportsFeeds API
@@ -17,7 +15,7 @@ class MySportsFeeds
 
         # Instantiate an instance of the appropriate API depending on version
         if @version == '1.0'
-            @api_instance = API_v1_0.new(@verbose, @store_type, @store_location)
+            @api_instance = Mysportsfeeds::Api::API_v1_0.new(@verbose, @store_type, @store_location)
         end
     end
 
@@ -51,7 +49,7 @@ class MySportsFeeds
     end
 
     # Request data (and store it if applicable)
-    def msf_get_data(*kwargs)
-        return @api_instance.get_data(kwargs)
+    def msf_get_data(league, season, feed, output_format, *kwargs)
+        return @api_instance.get_data(league, season, feed, output_format, kwargs)
     end
 end

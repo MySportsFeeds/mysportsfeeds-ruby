@@ -1,8 +1,10 @@
-require 'fileutils'
-require 'json'
-require 'base64'
 require 'net/http'
 require 'uri'
+require 'openssl'
+require 'json'
+require 'fileutils'
+
+require 'mysportsfeeds/version'
 
 module Mysportsfeeds
     module Api
@@ -13,8 +15,8 @@ module Mysportsfeeds
             def initialize(verbose, store_type=nil, store_location=nil)
                 @base_uri = URI("https://www.mysportsfeeds.com/api/feed/pull")
                 @headers = {
-                    # 'Accept-Encoding': 'gzip',
-                    'User-Agent': "MySportsFeeds Ruby/#{MySportsFeeds::Ruby::VERSION} (#{RUBY_PLATFORM})"
+                    "Accept-Encoding" => "gzip",
+                    "User-Agent" => "MySportsFeeds Ruby/#{Mysportsfeeds::Ruby::VERSION} (#{RUBY_PLATFORM})"
                 }
 
                 @verbose = verbose
@@ -49,7 +51,7 @@ module Mysportsfeeds
             def __verify_feed_name(feed)
                 is_valid = false
 
-                for value in self.valid_feeds
+                for value in @valid_feeds
                     if value == feed
                         is_valid = true
                         break
@@ -72,12 +74,28 @@ module Mysportsfeeds
 
             # Feed URL (with only a league specified)
             def __league_only_url(league, feed, output_format, params)
-                return "#{@base_url}/#{league}/#{feed}.#{output_format}"
+                url "#{@base_uri.to_s}/#{league}/#{feed}.#{output_format}"
+
+                delim = "?"
+                params.each do |key, value|
+                    url << delim << key << "=" << value
+                    delim = "&"
+                end
+
+                return url
             end
 
             # Feed URL (with league + season specified)
             def __league_and_season_url(league, season, feed, output_format, params)
-                return "#{@base_url}/#{league}/#{season}/#{feed}.#{output_format}"
+                url = "#{@base_uri.to_s}/#{league}/#{season}/#{feed}.#{output_format}"
+
+                delim = "?"
+                params.each do |key, value|
+                    url << delim << key << "=" << value
+                    delim = "&"
+                end
+
+                return url
             end
 
             # Generate the appropriate filename for a feed request
@@ -101,36 +119,33 @@ module Mysportsfeeds
             def __save_feed(response, league, season, feed, output_format, params)
                 # Save to memory regardless of selected method
                 if output_format == "json"
-                    store_output = response.json()
+                    store_output = JSON.parse(response)
                 elsif output_format == "xml"
-                    store_output = response.text
+                    store_output = response
                 elsif output_format == "csv"
-                    #store_output = response.content.split('\n')
-                    store_output = response.content.decode('utf-8')
-                    store_output = csv.reader(store_output.splitlines(), delimiter=',')
-                    store_output = list(store_output)
+                    store_output = response
                 end
 
-                if @store_type == "file":
+                if @store_type == "file"
                     if !File.exist?(@store_location)
-                        FileUtils::mkdir_p @store_location
+                        FileUtils::mkdir_p(@store_location)
                     end
 
                     filename = __make_output_filename(league, season, feed, output_format, params)
 
                     outfile = File.open(@store_location + filename, "w")
-                        if output_format == "json"  # This is JSON
-                            outfile.write(store_output)
+                    if output_format == "json"  # This is JSON
+                        json_out = response.to_json.gsub('\\', '').strip
+                        outfile.write(json_out[1..json_out.size-2])
 
-                        elsif output_format == "xml"  # This is xml
-                            outfile.write(store_output)
+                    elsif output_format == "xml"  # This is xml
+                        outfile.write(store_output)
 
-                        elsif output_format == "csv"  # This is csv
-                            outfile.write(store_output)
+                    elsif output_format == "csv"  # This is csv
+                        outfile.write(store_output)
 
-                        else
-                            raise Exception.new("Could not interpret feed output format")
-                        end
+                    else
+                        raise Exception.new("Could not interpret feed output format")
                     end
                 end
             end
@@ -142,38 +157,25 @@ module Mysportsfeeds
 
             # Establish BASIC auth credentials
             def set_auth_credentials(username, password)
-                @auth = {"username": username, "password": password}
+                @auth = {"username" => username, "password" => password}
             end
 
             # Request data (and store it if applicable)
-            def get_data(*kwargs)
-                if !@auth:
+            def get_data(league, season, feed, output_format, kwargs)
+                if !@auth
                     raise Exception.new("You must authenticate() before making requests.")
                 end
 
                 # establish defaults for all variables
-                league = ""
-                season = ""
-                feed = ""
-                output_format = ""
                 params = {}
 
-                # iterate over args and assign vars
-                kwargs.each do [key, value]
-                    if key == 'league'
-                        league = value
-                    elsif key == 'season'
-                        season = value
-                    elsif key == 'feed'
-                        feed = value
-                    elsif key == 'format'
-                        output_format = value
-                    else
+                # add force=false parameter (helps prevent unnecessary bandwidth use)
+                kwargs.each do |kwarg|
+                    kwarg.each do |key, value|
                         params[key] = value
                     end
                 end
 
-                # add force=false parameter (helps prevent unnecessary bandwidth use)
                 if !params.key?("force")
                     params['force'] = 'false'
                 end
@@ -196,8 +198,6 @@ module Mysportsfeeds
                     puts "Making API request to '#{url}'."
                     puts "  with headers:"
                     puts @headers
-                    puts " and params:"
-                    puts params
                 end
 
                 http = Net::HTTP.new(@base_uri.host, @base_uri.port)
@@ -207,35 +207,37 @@ module Mysportsfeeds
                 request.basic_auth(@auth["username"], @auth["password"])
 
                 r = http.request(request)
+                if @verbose
+                    puts "response = #{r}"
+                end
 
-                if r.code == 200
+                if r.code == "200"
                     if @store_type != nil
                         __save_feed(r.body, league, season, feed, output_format, params)
                     end
 
                     if output_format == "json"
                         data = JSON.parse(r.body)
-                    elsif output_format == "xml":
+                    elsif output_format == "xml"
                         data = r.body
                     else
                         data = r.body
                     end
 
-                elsif r.code == 304
+                elsif r.code == "304"
                     if @verbose
                         puts "Data hasn't changed since last call"
                     end
 
                     filename = __make_output_filename(league, season, feed, output_format, params)
 
-                    f = File.open(@store_location + filename, "r")
-                        if output_format == "json"
-                            data = JSON.parse(f)
-                        elsif output_format == "xml"
-                            data = f
-                        else
-                            data = f
-                        end
+                    f = File.read(@store_location + filename)
+                    if output_format == "json"
+                        data = JSON.parse(f)
+                    elsif output_format == "xml"
+                        data = f
+                    else
+                        data = f
                     end
 
                 else
