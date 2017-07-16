@@ -17,7 +17,7 @@ If you haven't signed up for API access, do so here [https://www.mysportsfeeds.c
 
 Create main MySportsFeeds object with API version as input parameter
 
-    require "mysportsfeeds/api/MySportsFeeds"
+    require "mysportsfeeds/mysportsfeeds"
 
     msf = MySportsFeeds.new(version="1.0", true)
 
