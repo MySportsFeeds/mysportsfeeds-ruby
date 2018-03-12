@@ -13,7 +13,7 @@ module Mysportsfeeds
 
             # Constructor
             def initialize(verbose, store_type=nil, store_location=nil)
-                @base_uri = URI("https://www.mysportsfeeds.com/api/v1.0/pull")
+                @base_uri = URI("https://api.mysportsfeeds.com/v1.0/pull")
                 @headers = {
                     "Accept-Encoding" => "gzip",
                     "User-Agent" => "MySportsFeeds Ruby/#{Mysportsfeeds::Ruby::VERSION} (#{RUBY_PLATFORM})"
