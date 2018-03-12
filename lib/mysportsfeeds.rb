@@ -1,4 +1,6 @@
 require "mysportsfeeds/api/API_v1_0"
+require "mysportsfeeds/api/API_v1_1"
+require "mysportsfeeds/api/API_v1_2"
 
 ### Main class for all interaction with the MySportsFeeds API
 class MySportsFeeds
@@ -14,15 +16,22 @@ class MySportsFeeds
         @store_location = store_location
 
         # Instantiate an instance of the appropriate API depending on version
-        if @version == '1.0'
+        case @version
+        when '1.0'
             @api_instance = Mysportsfeeds::Api::API_v1_0.new(@verbose, @store_type, @store_location)
+        when '1.1'
+            @api_instance = Mysportsfeeds::Api::API_v1_1.new(@verbose, @store_type, @store_location)
+        when '1.2'
+            @api_instance = Mysportsfeeds::Api::API_v1_2.new(@verbose, @store_type, @store_location)
+        else
+            raise Exception.new("Unrecognized version specified.  Supported versions are: '1.0', '1.1', '1.2'")
         end
     end
 
     # Make sure the version is supported
     def __verify_version(version)
-        if version != '1.0'
-            raise Exception.new("Unrecognized version specified.  Supported versions are: '1.0'")
+        unless %w{1.0 1.1 1.2}.include?(version)
+            raise Exception.new("Unrecognized version specified.  Supported versions are: '1.0', '1.1', '1.2'")
         end
     end
 
@@ -39,7 +48,7 @@ class MySportsFeeds
         end
     end
 
-    # Authenticate against the API (for v1.0)
+    # Authenticate against the API
     def authenticate(username, password)
         if !@api_instance.supports_basic_auth()
             raise Exception.new("BASIC authentication not supported for version " + @version)

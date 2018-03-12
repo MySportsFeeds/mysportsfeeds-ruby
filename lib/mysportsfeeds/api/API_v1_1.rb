@@ -8,12 +8,12 @@ require 'mysportsfeeds/version'
 
 module Mysportsfeeds
     module Api
-        # API class for dealing with v1.0 of the API
-        class API_v1_0
+        # API class for dealing with v1.1 of the API
+        class API_v1_1
 
             # Constructor
             def initialize(verbose, store_type=nil, store_location=nil)
-                @base_uri = URI("https://www.mysportsfeeds.com/api/v1.0/pull")
+                @base_uri = URI("https://www.mysportsfeeds.com/api/v1.1/pull")
                 @headers = {
                     "Accept-Encoding" => "gzip",
                     "User-Agent" => "MySportsFeeds Ruby/#{Mysportsfeeds::Ruby::VERSION} (#{RUBY_PLATFORM})"

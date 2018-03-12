@@ -8,14 +8,14 @@ Free for Non-Commercial Use.
 
 ##Install
 
-    
+
     $ gem install mysportsfeeds-ruby
 
 If you haven't signed up for API access, do so here [https://www.mysportsfeeds.com/index.php/register/](https://www.mysportsfeeds.com/index.php/register/)
 
 ##Usage
 
-Create main MySportsFeeds object with API version as input parameter
+Create main MySportsFeeds object with API version as input parameter. Supports v1.0 through v1.2 of the MSF API.
 
     require "mysportsfeeds/mysportsfeeds"
 
