@@ -30,7 +30,7 @@ class MySportsFeeds
 
     # Make sure the version is supported
     def __verify_version(version)
-        unless %w{1.0 1.1 1.2}.include?(version)
+        unless %w{1.0 1.1 1.2}.include?(version.to_s)
             raise Exception.new("Unrecognized version specified.  Supported versions are: '1.0', '1.1', '1.2'")
         end
     end
